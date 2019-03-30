@@ -1,0 +1,327 @@
+---
+title: "Normal Distribution"
+author: "Kartikeya  Bolar"
+output: ioslides_presentation
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+```
+
+##  Normal  Distribution  Characteristics
+
+- The distribution is symmetric; its skewness measure is zero.
+- The entire family of normal probability distributions is defined by its mean and its
+  standard deviation.
+- The mean can be any numerical value:  negative, zero, or positive.
+- Probabilities for the normal random variable are given by areas under the curve. 
+- The standard deviation determines the width of the curve: larger values result in wider, flatter curves.
+
+
+## Normal  Distribution  Problem
+
+Scores on a recent national statistics exam were normally distributed with a mean of 80 and a standard deviation of 6.
+```{r}
+cat(sprintf("\n" ))
+```
+
+- What is the probability that a randomly selected exam will have a score of at least 71?
+```{r}
+cat(sprintf("\n" ))
+```
+- What percentage of exams will have scores between 89 and 92?
+```{r}
+cat(sprintf("\n" ))
+```
+- If the top 2.5% of test scores receive merit awards, what is the lowest score eligible for an award? 
+
+
+
+## Problem Formulation
+
+```{r}
+
+inputPanel(
+ 
+ numericInput("mean", label = "Enter the mean:",80),
+ numericInput("sd", label = "Enter the standard deviation:",6),
+ textInput("rv", label = "Enter what random variable indicates","Score"),
+ textInput("cl",label = "Enter color for filling","red")
+ )
+
+inputPanel(
+ numericInput("ss",label = "Sample Size for creating dataset",10000 ),
+downloadButton("downloadData", "Download the dataset")
+  )
+
+renderPrint({
+      cat(sprintf("Let X be the Random variable indicating %s",input$rv))
+      expectednumber  = as.numeric(input$mean)
+      standarddeviation = as.numeric(input$sd)
+     limitingvaluen = as.numeric(input$limitingvaluen)
+     limitingvaluenl = as.numeric(input$limitingvaluenl)
+     limitingvaluenu = as.numeric(input$limitingvaluenu)
+      cat(sprintf("\nThe mean of the distribution is %f",expectednumber))
+      cat(sprintf("\nThe standard deviation of the distribution  is %f", standarddeviation))
+    #  cat(sprintf("\nProbability(X %s %f)",input$signnormal,limitingvaluen))
+      if(input$signnormal == "<=")
+        probvalue = pnorm(q = limitingvaluen, mean = expectednumber,sd = standarddeviation)
+
+      if(input$signnormal == ">=")
+        probvalue = 1-pnorm(q = limitingvaluen,mean = expectednumber,sd = standarddeviation)
+
+    #  cat(sprintf(" : %f",probvalue))
+})
+datasetInput <- reactive({
+    rnorm2 = function(n,mean,sd){mean + sd * scale(rnorm(n))}
+    
+    dataset1= rnorm2(n= input$ss, mean = input$mean,sd =input$sd)
+    dataset = data.frame(X = dataset1)
+    
+  })
+output$downloadData <- downloadHandler(
+    filename = function() {
+      filetitle = paste(input$rv,"dataset")
+      paste(filetitle, ".csv", sep = "")
+    },
+    content = function(file) {
+      
+      write.csv(datasetInput(), file, row.names = FALSE)
+    }
+  )
+```
+
+## Computation and Visualization
+
+```{r}
+inputPanel(
+  selectInput("signnormal", label = "Select the sign",
+                                     choices = c("<=",">="), selected = ">="),
+   numericInput("limitingvaluen", label = "Enter the limitingvalue",71),
+downloadButton("downloadPlot", "Download the Plot")
+)
+renderPrint({
+      
+      expectednumber  = as.numeric(input$mean)
+      standarddeviation = as.numeric(input$sd)
+     limitingvaluen = as.numeric(input$limitingvaluen)
+     limitingvaluenl = as.numeric(input$limitingvaluenl)
+     limitingvaluenu = as.numeric(input$limitingvaluenu)
+     # cat(sprintf("The mean of the distribution is %f",expectednumber))
+     # cat(sprintf("\nThe standard deviation of the distribution  is %f", standarddeviation))
+      cat(sprintf("Probability(X %s %f)",input$signnormal,limitingvaluen))
+      if(input$signnormal == "<=")
+        probvalue = pnorm(q = limitingvaluen, mean = expectednumber,sd = standarddeviation)
+
+      if(input$signnormal == ">=")
+        probvalue = 1-pnorm(q = limitingvaluen,mean = expectednumber,sd = standarddeviation)
+
+      cat(sprintf(" : %f",probvalue))
+})
+
+renderPlot({
+  mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluen = as.numeric(input$limitingvaluen)
+      x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+    
+      if(input$signnormal == "<=")
+    {  title = paste("Normal Distribution followed by " ,  input$rv)
+        plot(x, y, type="l",xlab = input$rv, ylab = "Probability Value",main = title,col = "black")
+      polygon(c( x[x<=limitingvaluen], limitingvaluen ),  c(y[x<=limitingvaluen],0 ), col= input$cl)
+     }
+if(input$signnormal == ">=")
+    {
+       title = paste("Normal Distribution followed by  " ,  input$rv)
+       plot(x, y, type="l",xlab = input$rv, ylab = " Probability Value",main = title,col = "black")
+        polygon(c( x[x>=limitingvaluen], limitingvaluen ),  c(y[x>=limitingvaluen],0 ), col=input$cl)
+      }
+})
+
+  
+output$downloadPlot <- downloadHandler(
+    filename = function() {
+      paste("NormalDistributionplot", ".png", sep = "")
+    },
+    content = function(file) {
+      png(file)
+      
+      mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluen = as.numeric(input$limitingvaluen)
+      x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+   
+      if(input$signnormal == "<=")
+    {   title = paste("Normal Distribution followed by " ,  input$rv)
+        plot(x, y, type="l",xlab = input$rv, ylab = "Probability Value",main = title,col = "black")
+      polygon(c( x[x<=limitingvaluen], limitingvaluen ),  c(y[x<=limitingvaluen],0 ), col = input$cl)
+     }
+if(input$signnormal == ">=")
+    {  title = paste("Normal Distribution followed by " ,  input$rv)
+       plot(x, y, type="l",xlab = input$rv , ylab = " Probability Value",main = title,col = "black")
+        polygon(c( x[x>=limitingvaluen], limitingvaluen ),  c(y[x>=limitingvaluen],0 ), col = input$cl)
+      }
+      dev.off()
+    })
+```
+
+##  Visualization between limits
+
+```{r}
+inputPanel(
+numericInput("limitingvaluenl", label = "Enter the lower limit",89),
+numericInput("limitingvaluenu", label = "Enter the upper limit",92),
+downloadButton("downloadPlot2", "Download the Plot")
+)
+renderPrint({
+  expectednumber  = as.numeric(input$mean)
+  standarddeviation = as.numeric(input$sd)
+  limitingvaluenl = as.numeric(input$limitingvaluenl)
+  limitingvaluenu = as.numeric(input$limitingvaluenu)
+  cat(sprintf("Probability(%f <= X <= %f)",limitingvaluenl,limitingvaluenu))
+probvaluebetween = pnorm(q = limitingvaluenu, mean = expectednumber,sd = standarddeviation)-pnorm(q = limitingvaluenl, mean = expectednumber,sd = standarddeviation)
+      cat(sprintf(" : %f",probvaluebetween))
+})
+renderPlot({
+      title = paste("Normal Distribution followed by  " ,  input$rv)
+      mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluenl = as.numeric(input$limitingvaluenl)
+      limitingvaluenu = as.numeric(input$limitingvaluenu)
+      x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+      plot(x, y, type="l",xlab = input$rv, ylab = " Probability Value",main = title,col = "black")
+      polygon(c(limitingvaluenl,x[x<=limitingvaluenu & x>=limitingvaluenl], limitingvaluenu ),  c(0,y[x<=limitingvaluenu & x>=limitingvaluenl],0 ), col= input$cl)
+
+})
+
+output$downloadPlot2 <- downloadHandler(
+    filename = function() {
+      paste("NormalDistributionplot", ".png", sep = "")
+    },
+    content = function(file) {
+      png(file)
+      
+       title = paste("Normal Distribution followed by  " ,  input$rv)
+      mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluenl = as.numeric(input$limitingvaluenl)
+      limitingvaluenu = as.numeric(input$limitingvaluenu)
+      x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+      plot(x, y, type="l",xlab = input$rv, ylab = " Probability Value",main = title,col = "black")
+      polygon(c(limitingvaluenl,x[x<=limitingvaluenu & x>=limitingvaluenl], limitingvaluenu ),  c(0,y[x<=limitingvaluenu & x>=limitingvaluenl],0 ), col= input$cl)
+      dev.off()
+    })
+```
+
+##   Area Covered
+
+```{r}
+
+inputPanel(
+  numericInput("auc",label= "Enter probability coverage from the left",0.975),
+downloadButton("downloadPlot3", "Download the Plot")
+)
+renderPrint({
+  expectednumber  = as.numeric(input$mean)
+  standarddeviation = as.numeric(input$sd)
+ 
+  cat(sprintf("limiting value of %s",input$rv))
+X = qnorm(p = input$auc, mean = expectednumber,sd = standarddeviation)
+cat(sprintf(" : %f",X))
+})
+renderPlot({
+    mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+ 
+limitingvaluenauc = qnorm(p = input$auc, mean = mean ,sd = sd)
+  title = paste("Normal Distribution followed by " ,  input$rv)
+   x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+        plot(x, y, type="l",xlab = input$rv, ylab = "Probability Value",main = title,col = "black")
+      polygon(c( x[x<=limitingvaluenauc], limitingvaluenauc ),  c(y[x<=limitingvaluenauc],0 ), col = input$cl)
+})
+output$downloadPlot3 <- downloadHandler(
+    filename = function() {
+      paste("NormalDistributionplot", ".png", sep = "")
+    },
+    content = function(file) {
+      png(file)
+       mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+ 
+limitingvaluenauc = qnorm(p = input$auc, mean = mean ,sd = sd)
+  title = paste("Normal Distribution followed by " ,  input$rv)
+   x <- seq(-3.5,3.5,length=100)*sd + mean
+      y <- dnorm(x,mean,sd)
+        plot(x, y, type="l",xlab = input$rv, ylab = "Probability Value",main = title,col = "black")
+      polygon(c( x[x<=limitingvaluenauc], limitingvaluenauc ),  c(y[x<=limitingvaluenauc],0 ), col = input$cl)
+       
+      dev.off()
+    })
+```
+
+##  Number of standard  deviations
+
+```{r}
+inputPanel(
+ sliderInput("sscore",label = "Enter Z",min = 1, max = 6,step = 1,value = 1),
+ downloadButton("downloadPlot4", "Download the Plot")
+ 
+)
+renderPrint({
+  expectednumber  = as.numeric(input$mean)
+  standarddeviation = as.numeric(input$sd)
+  limitingvaluenl = expectednumber - (input$sscore * standarddeviation)
+  limitingvaluenu = expectednumber + (input$sscore * standarddeviation)
+  cat(sprintf("Probability(%f <= X <= %f)",limitingvaluenl,limitingvaluenu))
+probvaluebetween = pnorm(q = limitingvaluenu, mean = expectednumber,sd = standarddeviation)-pnorm(q = limitingvaluenl, mean = expectednumber,sd = standarddeviation)
+      cat(sprintf(" : %f",probvaluebetween))
+})
+renderPlot({
+      title = paste("Normal Distribution followed by  " ,  input$rv)
+      mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluenl = mean - (input$sscore * sd)
+      limitingvaluenu = mean + (input$sscore *sd)
+      x <- seq(-6.5,6.5,length=600)*sd + mean
+      y <- dnorm(x,mean,sd)
+      plot(x, y, type="l",xlab = input$rv, ylab = " Probability Value",main = title,col = "black")
+      polygon(c(limitingvaluenl,x[x<=limitingvaluenu & x>=limitingvaluenl], limitingvaluenu ),  c(0,y[x<=limitingvaluenu & x>=limitingvaluenl],0 ), col= input$cl)
+
+})
+output$downloadPlot4 <- downloadHandler(
+    filename = function() {
+      paste("NormalDistributionplot", ".png", sep = "")
+    },
+    content = function(file) {
+      png(file)
+       title = paste("Normal Distribution followed by  " ,  input$rv)
+      mean = as.numeric(input$mean)
+      sd = as.numeric(input$sd)
+      limitingvaluenl = mean - (input$sscore * sd)
+      limitingvaluenu = mean + (input$sscore *sd)
+      x <- seq(-6.5,6.5,length=600)*sd + mean
+      y <- dnorm(x,mean,sd)
+      plot(x, y, type="l",xlab = input$rv, ylab = " Probability Value",main = title,col = "black")
+      polygon(c(limitingvaluenl,x[x<=limitingvaluenu & x>=limitingvaluenl], limitingvaluenu ),  c(0,y[x<=limitingvaluenu & x>=limitingvaluenl],0 ), col= input$cl)
+       
+      dev.off()
+    })
+```
+
+## Not satisfied with spoon feeding!
+```{r,echo=FALSE}
+h6("", tags$img(src ="SF.JPG", height= 100, width=200))
+```
+ Then contact
+
+```{r,echo=FALSE}
+h6("", tags$img(src ="VC.JPG", height= 300, width=600))
+```
+
+
